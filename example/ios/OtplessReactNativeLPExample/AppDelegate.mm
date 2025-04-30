@@ -16,11 +16,10 @@
 }
 
 - (BOOL) application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-//  if([Connector isOtplessDeeplink:url]){
-//    [Connector loadUrl:url];
-//    return true;
-//  }
-//  [Connector registerFBApp:app open:url options:options];
+  if([Connector isOtplessDeeplink:url]){
+    [Connector processDeepLink:url];
+    return true;
+  }
   [super application:app openURL:url options:options];
   return true;
 }
