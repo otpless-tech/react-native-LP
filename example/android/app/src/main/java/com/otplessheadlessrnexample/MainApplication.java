@@ -1,4 +1,4 @@
-package com.otplessreactnativelpexample;
+package com.otplessheadlessrnexample;
 
 import android.app.Application;
 

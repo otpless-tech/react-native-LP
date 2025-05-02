@@ -3,24 +3,28 @@ package com.otplessreactnativelp
 import android.app.Activity
 import android.content.Intent
 import com.facebook.react.bridge.ActivityEventListener
-import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableType
+import com.facebook.react.bridge.WritableMap
+import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
-import com.otpless.loginpage.main.ConnectController
-import com.otpless.loginpage.model.AuthResponse
-import com.otpless.loginpage.util.Utility
+import com.otpless.loginpage.main.OtplessController
+import com.otpless.loginpage.model.CustomTabParam
+import com.otpless.loginpage.model.ErrorType
+import com.otpless.loginpage.model.LoginPageParams
+import com.otpless.loginpage.model.OtplessResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONException
-import org.json.JSONObject
 
 class OtplessReactNativeLPModule(private val reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext), ActivityEventListener {
 
-  private lateinit var connectController: ConnectController
+  private lateinit var otplessController: OtplessController
 
 
   init {
@@ -32,43 +36,44 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
     return NAME
   }
 
-  private fun sendResultCallback(result: AuthResponse) {
-    fun sendResultEvent(result: JSONObject) {
+  private fun sendResultCallback(result: OtplessResult) {
+    fun sendResultEvent(result: OtplessResult) {
       try {
-        val map = convertJsonToMap(result)
+        val map = result.toWritableMap()
         this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
           .emit("OTPlessEventResult", map)
       } catch (_: JSONException) {
 
       }
     }
-
-    sendResultEvent(result.response)
+    sendResultEvent(result)
   }
 
   @ReactMethod
   fun stop() {
-    if (this::connectController.isInitialized) {
-      connectController.closeOtpless()
+    if (this::otplessController.isInitialized) {
+      otplessController.closeOtpless()
     }
   }
 
   @ReactMethod
   fun initialize(appId: String) {
-    connectController = ConnectController.getInstance(currentActivity!!, appId)
-    connectController.initializeOtpless()
+    otplessController = OtplessController.getInstance(currentActivity!!, appId)
+    otplessController.initializeOtpless()
   }
 
   @ReactMethod
-  fun start() {
+  fun start(loginRequest: ReadableMap?) {
     CoroutineScope(Dispatchers.IO).launch {
-      connectController.startOtplessWithLoginPage()
+      otplessController.startOtplessWithLoginPage(
+        convertToLoginPageParams(loginRequest)
+      )
     }
   }
 
   @ReactMethod
   fun setResponseCallback() {
-    connectController.registerResponseCallback(this::sendResultCallback)
+    otplessController.registerResultCallback(this::sendResultCallback)
   }
 
   companion object {
@@ -85,9 +90,78 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   override fun onNewIntent(intent: Intent?) {
     intent ?: return
-    connectController.onNewIntent(currentActivity!!, intent)
+    otplessController.onNewIntent(currentActivity!!, intent)
   }
 
+}
+
+fun OtplessResult.toWritableMap(): WritableMap {
+  val map: WritableMap = WritableNativeMap()
+  when (this) {
+    is OtplessResult.Success -> {
+      map.putString("token", this.token)
+      map.putString("traceId", this.traceId)
+    }
+
+    is OtplessResult.Error -> {
+      map.putString("traceId", this.traceId)
+      map.putString("errorMessage", this.errorMessage)
+      map.putInt("errorCode", this.errorCode)
+      map.putString("", this.errorType.toStr())
+    }
+  }
+  return map
+}
+
+private fun ErrorType.toStr(): String {
+  return when (this) {
+    ErrorType.VERIFY -> "VERIFY"
+    ErrorType.NETWORK -> "NETWORK"
+    ErrorType.INITIATE -> "INITIATE"
+  }
+}
+
+private fun convertToLoginPageParams(request: ReadableMap?): LoginPageParams {
+  request ?: return LoginPageParams()
+  var waitTime = 2_000
+  if (request.hasKey("waitTime")) {
+    waitTime = request.getInt("waitTime")
+  }
+  var extraParams: Map<String, String> = emptyMap()
+  request.getMap("extraQueryParams")?.let {
+    extraParams = it.toStringMap()
+  }
+  //region parsing all members of custom tab params if any
+  val customTapMap = request.getMap("customTabParam")
+  val toolbarColor = customTapMap?.getString("toolbarColor") ?: ""
+  val secondaryToolbarColor = customTapMap?.getString("secondaryToolbarColor") ?: ""
+  val navigationBarColor = customTapMap?.getString("navigationBarColor") ?: ""
+  val navigationBarDividerColor = customTapMap?.getString("navigationBarDividerColor") ?: ""
+  val backgroundColor: String? = customTapMap?.getString("backgroundColor")
+  val customTabParam = CustomTabParam(
+    toolbarColor = toolbarColor, secondaryToolbarColor = secondaryToolbarColor,
+    navigationBarColor = navigationBarColor, navigationBarDividerColor = navigationBarDividerColor, backgroundColor = backgroundColor
+  )
+  //endregion
+  return LoginPageParams(waitTime = waitTime.toLong(), extraQueryParams = extraParams, customTabParam = customTabParam)
+}
+
+fun ReadableMap.toStringMap(): Map<String, String> {
+  val result = mutableMapOf<String, String>()
+  val iter = keySetIterator()
+  while (iter.hasNextKey()) {
+    val key = iter.nextKey()
+    val valueStr = when (getType(key)) {
+      ReadableType.String -> getString(key).orEmpty()
+      ReadableType.Number -> getDouble(key).toString()
+      ReadableType.Boolean -> getBoolean(key).toString()
+      ReadableType.Null -> ""
+      ReadableType.Map -> getMap(key).toString()
+      ReadableType.Array -> getArray(key).toString()
+    }
+    result[key] = valueStr
+  }
+  return result
 }
 
 
