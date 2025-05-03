@@ -1,10 +1,21 @@
 import OtplessSwiftLP
+import UIKit
+import SafariServices
 
 
 @objc(OtplessReactNativeLP)
 class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
-  func onConnectResponse(_ response: [String : Any]) {
-    sendEvent(withName: "OTPlessEventResult", body: response)
+  func onConnectResponse(_ response: OtplessResult) {
+    var dict: [String: Any?] = [:]
+    if response.status.lowercased() == "error" {
+      dict["errorMesage"] = response.errorMessage
+      dict["errorCode"] = response.errorCode
+      dict["errorType"] = response.errorType
+    } else {
+      dict["token"] = response.token
+    }
+    dict["traceId"] = response.traceId
+    sendEvent(withName: "OTPlessEventResult", body: dict)
   }
   
   private var currentTask: Task<Void, Never>?
@@ -33,14 +44,16 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     }
   }
   
-  @objc(start)
-  func start() {
+  @objc(start:)
+  func start(request: [String: Any]) {
     DispatchQueue.main.async {
       let windowSceneVC = self.getRootViewControllerFromWindowScene()
       if windowSceneVC == nil {
         return
       }
-      OtplessSwiftLP.shared.start(vc: windowSceneVC!)
+      let requestParams = self.parseRequest(request)
+      let timeout = request["waitTime"] as? Int ?? 2000
+      OtplessSwiftLP.shared.start(vc: windowSceneVC!, options: requestParams.options, extras: requestParams.extras, timeout: TimeInterval(timeout / 1000))
     }
   }
   
@@ -48,7 +61,7 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
   func setResponseCallback() {
     OtplessSwiftLP.shared.setResponseDelegate(self)
   }
-
+  
   @objc(stop)
   func stop() {
     OtplessSwiftLP.shared.cease()
@@ -81,5 +94,38 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     }
     return windowScene
   }
+  
+  func parseRequest(_ request: [String: Any]) -> (options: SafariCustomizationOptions, extras: [String: String]) {
+    var preferredBarTintColor: UIColor? = nil
+    var preferredControlTintColor: UIColor? = nil
+    var dismissButtonStyle: SFSafariViewController.DismissButtonStyle = .close
+    var modalPresentationStyle: UIModalPresentationStyle = .automatic
+    
+    if let safariVCParams = request["safariCustomizationOptions"] as? [String: Any] {
+      if let barColorHex = safariVCParams["preferredBarTintColor"] as? String {
+        preferredBarTintColor = UIColor(hex: barColorHex)
+      }
+      if let controlColorHex = safariVCParams["preferredControlTintColor"] as? String {
+        preferredControlTintColor = UIColor(hex: controlColorHex)
+      }
+      if let dismissStyleString = safariVCParams["dismissButtonStyle"] as? String {
+        dismissButtonStyle = SFSafariViewController.DismissButtonStyle.from(string: dismissStyleString)
+      }
+      if let modalStyleString = safariVCParams["modalPresentationStyle"] as? String {
+        modalPresentationStyle = UIModalPresentationStyle.from(string: modalStyleString)
+      }
+    }
+    
+    let options = SafariCustomizationOptions(
+      preferredBarTintColor: preferredBarTintColor,
+      preferredControlTintColor: preferredControlTintColor,
+      dismissButtonStyle: dismissButtonStyle,
+      modalPresentationStyle: modalPresentationStyle
+    )
+    
+    let extras = (request["extraQueryParams"] as? [String: String])?.compactMapValues { "\($0)" } ?? [:]
+    
+    return (options, extras)
+  }
+  
 }
-

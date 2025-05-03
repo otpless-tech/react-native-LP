@@ -7,7 +7,7 @@ RCT_EXTERN_METHOD(initialize:(NSString *)appId)
 
 RCT_EXTERN_METHOD(setResponseCallback)
 
-RCT_EXTERN_METHOD(start)
+RCT_EXTERN_METHOD(start:(NSDictionary *)request)
 
 RCT_EXTERN_METHOD(stop)
 

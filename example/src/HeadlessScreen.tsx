@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
 import { OtplessReactNativeModule } from 'otpless-react-native-lp';
 
 export default function HeadlessPage() {
     const otplessModule = new OtplessReactNativeModule();
     const [result, setResult] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
 
     useEffect(() => {
         initializeModule();
@@ -24,7 +25,30 @@ export default function HeadlessPage() {
     };
 
     const startHeadless = () => {
-        otplessModule.start();
+        const baseRequest: any = {};
+        if (Platform.OS === 'ios') {
+            baseRequest.safariCustomizationOptions = {
+                preferredBarTintColor: '#5B0171',
+                dismissButtonStyle: 'cancel',
+            };
+        } else {
+            baseRequest.customTabParam = {
+                toolbarColor: '#5B0171',
+                navigationBarColor: '#5B0171',
+                navigationBarDividerColor: '#FF3269',
+                backgroundColor: '#5B0171',
+            };
+        }
+        
+        const request = phoneNumber ? {
+            ...baseRequest,
+            "extraQueryParams": {
+                "phone": phoneNumber,
+                "countryCode": "91"
+            }
+        } : baseRequest;
+
+        otplessModule.start(request);
     };
 
     const stopOperation = () => {
@@ -33,6 +57,15 @@ export default function HeadlessPage() {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
+
+            <TextInput
+                style={styles.input}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                placeholder="Enter phone number"
+            />
+
             <TouchableOpacity style={styles.primaryButton} onPress={startHeadless}>
                 <Text style={styles.buttonText}>Show Otpless Login Page</Text>
             </TouchableOpacity>
@@ -55,6 +88,16 @@ const styles = StyleSheet.create({
     container: {
         padding: 20,
         alignItems: 'center',
+    },
+    input: {
+        width: '80%',
+        height: 50,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        paddingHorizontal: 15,
+        marginBottom: 20,
+        fontSize: 16,
     },
     primaryButton: {
         backgroundColor: "#007AFF",
