@@ -107,7 +107,7 @@ fun OtplessResult.toWritableMap(): WritableMap {
       map.putString("traceId", this.traceId)
       map.putString("errorMessage", this.errorMessage)
       map.putInt("errorCode", this.errorCode)
-      map.putString("", this.errorType.toStr())
+      map.putString("errorType", this.errorType.toStr())
     }
   }
   return map
