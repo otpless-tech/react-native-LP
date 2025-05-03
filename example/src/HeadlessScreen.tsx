@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
 import { OtplessReactNativeModule } from 'otpless-react-native-lp';
 
 export default function HeadlessPage() {
@@ -25,15 +25,21 @@ export default function HeadlessPage() {
     };
 
     const startHeadless = () => {
-        const baseRequest = {
-            "customTabParam": {
-                "toolbarColor": "#5B0171",
-                "navigationBarColor": "#5B0171",
-                "navigationBarDividerColor": "#FF3269",
-                "backgroundColor": "#5B0171"
-            }
-        };
-
+        const baseRequest: any = {};
+        if (Platform.OS === 'ios') {
+            baseRequest.safariCustomizationOptions = {
+                preferredBarTintColor: '#5B0171',
+                dismissButtonStyle: 'cancel',
+            };
+        } else {
+            baseRequest.customTabParam = {
+                toolbarColor: '#5B0171',
+                navigationBarColor: '#5B0171',
+                navigationBarDividerColor: '#FF3269',
+                backgroundColor: '#5B0171',
+            };
+        }
+        
         const request = phoneNumber ? {
             ...baseRequest,
             "extraQueryParams": {
