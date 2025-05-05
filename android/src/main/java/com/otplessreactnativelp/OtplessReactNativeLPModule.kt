@@ -2,6 +2,7 @@ package com.otplessreactnativelp
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -30,6 +31,15 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   init {
     OtplessReactNativeLPManager.registerOtplessModule(this)
     reactContext.addActivityEventListener(this)
+
+  }
+
+  private fun logd(message: String) {
+    Log.d(Tag, message)
+  }
+
+  private fun logd(message: String, error: Throwable) {
+    Log.d(Tag, message, error)
   }
 
   override fun getName(): String {
@@ -38,12 +48,13 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   private fun sendResultCallback(result: OtplessResult) {
     fun sendResultEvent(result: OtplessResult) {
+      logd("sending result")
       try {
         val map = result.toWritableMap()
         this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
           .emit("OTPlessEventResult", map)
-      } catch (_: JSONException) {
-
+      } catch (thr: JSONException) {
+        logd("exception in sendResultCallback", thr)
       }
     }
     sendResultEvent(result)
@@ -51,6 +62,7 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   @ReactMethod
   fun stop() {
+    logd("stop otpless called")
     if (this::otplessController.isInitialized) {
       otplessController.closeOtpless()
     }
@@ -58,12 +70,14 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   @ReactMethod
   fun initialize(appId: String) {
+    logd("init otpless called")
     otplessController = OtplessController.getInstance(currentActivity!!)
     otplessController.initializeOtpless(appId)
   }
 
   @ReactMethod
   fun start(loginRequest: ReadableMap?) {
+    logd("start otpless called")
     CoroutineScope(Dispatchers.IO).launch {
       otplessController.startOtplessWithLoginPage(
         convertToLoginPageParams(loginRequest)
@@ -73,11 +87,13 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   @ReactMethod
   fun setResponseCallback() {
+    logd("set response callback called")
     otplessController.registerResultCallback(this::sendResultCallback)
   }
 
   companion object {
     const val NAME = "OtplessReactNativeLP"
+    private const val Tag = "OTPLESS"
   }
 
   override fun onActivityResult(
@@ -86,9 +102,11 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
     resultCode: Int,
     data: Intent?
   ) {
+    logd("on activity result called req: $requestCode res: $resultCode")
   }
 
   override fun onNewIntent(intent: Intent?) {
+    logd("on new intent called: ${intent?.data}")
     intent ?: return
     otplessController.onNewIntent(currentActivity!!, intent)
   }

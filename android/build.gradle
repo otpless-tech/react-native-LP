@@ -43,6 +43,7 @@ android {
     minSdkVersion 21
     targetSdkVersion 35
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+    consumerProguardFiles "consumer-rules.pro"
   }
   buildTypes {
     release {
