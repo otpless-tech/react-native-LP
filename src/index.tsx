@@ -67,4 +67,30 @@ class OtplessReactNativeModule {
   }
 }
 
+export interface SafariCustomizationOptions  {
+  preferredBarTintColor?: string;
+  preferredControlTintColor?: string;
+  dismissButtonStyle?: 'done' | 'cancel' | 'close';
+  modalPresentationStyle?: 'automatic' | 'pageSheet' | 'formSheet' | 'overFullScreen';
+};
+
+export interface CustomTabParam {
+  toolbarColor?: string;
+  secondaryToolbarColor?: string;
+  navigationBarColor?: string;
+  navigationBarDividerColor?: string;
+  backgroundColor?: string | null;
+}
+
+export interface LoginPageParams {
+  /** milliseconds to wait (default 2000) */
+  waitTime?: number;
+  /** extra query params (default {}) */
+  extraQueryParams?: Record<string, string>;
+  /** custom tab options (default new CustomTabParam()) */
+  customTabParam?: CustomTabParam;
+
+  safariCustomizationOption?: SafariCustomizationOptions;
+}
+
 export { OtplessReactNativeModule };

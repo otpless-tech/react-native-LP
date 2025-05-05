@@ -15,12 +15,12 @@ export default function HeadlessPage() {
     }, []);
 
     const initializeModule = () => {
-        otplessModule.initialize("YOUR_APP_ID");
+        otplessModule.initialize("H7A18MQGF2DLZY7PIJRQ");
         otplessModule.setResponseCallback(onHeadlessResult);
     };
 
     const onHeadlessResult = (data: any) => {
-        const dataStr = JSON.stringify(data, null, 2);
+        const dataStr = result + "\n" +  JSON.stringify(data, null, 2) + "\n";
         setResult(dataStr);
     };
 

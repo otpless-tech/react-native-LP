@@ -58,8 +58,8 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   @ReactMethod
   fun initialize(appId: String) {
-    otplessController = OtplessController.getInstance(currentActivity!!, appId)
-    otplessController.initializeOtpless()
+    otplessController = OtplessController.getInstance(currentActivity!!)
+    otplessController.initializeOtpless(appId)
   }
 
   @ReactMethod
