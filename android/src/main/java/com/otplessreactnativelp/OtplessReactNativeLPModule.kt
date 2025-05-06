@@ -13,10 +13,12 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.otpless.loginpage.main.OtplessController
+import com.otpless.loginpage.model.AuthEvent
 import com.otpless.loginpage.model.CustomTabParam
 import com.otpless.loginpage.model.ErrorType
 import com.otpless.loginpage.model.LoginPageParams
 import com.otpless.loginpage.model.OtplessResult
+import com.otpless.loginpage.model.ProviderType
 import com.otpless.loginpage.util.Utility
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -111,6 +113,27 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   fun setLogging(status: Boolean) {
     logd("setting logging status: $status")
     Utility.isLoggingEnabled = status
+  }
+
+  @ReactMethod
+  fun userAuthEvent(event: String, fallback: Boolean, type: String, info: ReadableMap?) {
+    currentActivity?.let {
+      val controller = InstanceProvider.getInstance(it)
+      val authEvent = when(event) {
+        "AUTH_INITIATED" -> AuthEvent.AUTH_INITIATED
+        "AUTH_SUCCESS" -> AuthEvent.AUTH_SUCCESS
+        "AUTH_FAILED" -> AuthEvent.AUTH_FAILED
+        else -> AuthEvent.AUTH_INITIATED
+      }
+      val providerType = when(type) {
+        "OTPLESS" -> ProviderType.OTPLESS
+        "CLIENT" -> ProviderType.CLIENT
+        else -> ProviderType.OTPLESS
+      }
+      val providerInfo: Map<String, String> = info?.toMap() ?: emptyMap()
+      logd("authEvent: $authEvent, fallback: $fallback, providerType: $providerType, providerInfo: ${providerInfo.size}")
+      controller.userAuthEvent(authEvent, fallback, providerType, providerInfo)
+    }
   }
 
 }

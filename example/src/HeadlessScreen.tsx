@@ -6,6 +6,7 @@ export default function HeadlessPage() {
     const otplessModule = new OtplessReactNativeModule();
     const [result, setResult] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
+    var lastResponse = ""
 
     useEffect(() => {
         initializeModule();
@@ -24,12 +25,15 @@ export default function HeadlessPage() {
         var dataStr = ""
         if(data.status === "success") {
             const success: OTPlessSuccess = data 
-            dataStr = result + "Success\n" +  JSON.stringify(success, null, 2) + "\n";
+            dataStr = "Success\n" +  JSON.stringify(success, null, 2) + "\n";
         } else {
             const error: OTPlessError = data
-            dataStr = result + "Error\n" +  JSON.stringify(error, null, 2) + "\n";
+            dataStr = "Error\n" +  JSON.stringify(error, null, 2) + "\n";
         }
-        setResult(dataStr);
+        const info = {"status": data.status}
+        otplessModule.userAuthEvent("AUTH_SUCCESS", false, "OTPLESS", info)
+        lastResponse = lastResponse + "\n\n" + dataStr
+        setResult(lastResponse);
     };
 
     const startHeadless = () => {

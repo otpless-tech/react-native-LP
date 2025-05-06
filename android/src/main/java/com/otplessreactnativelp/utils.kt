@@ -113,3 +113,18 @@ internal fun convertJsonToArray(jsonArray: JSONArray): WritableArray {
   return array
 }
 
+internal fun ReadableMap.toMap(): Map<String, String> {
+  val iterator = this.keySetIterator()
+  val resultMap = mutableMapOf<String, String>()
+  while (iterator.hasNextKey()) {
+    val key = iterator.nextKey() ?: continue
+    when (this.getType(key)) {
+      ReadableType.Boolean -> resultMap[key] = this.getBoolean(key).toString()
+      ReadableType.String -> resultMap[key] = this.getString(key) ?: ""
+      ReadableType.Number -> resultMap[key] = this.getDouble(key).toString()
+      else -> continue
+    }
+  }
+  return resultMap
+}
+

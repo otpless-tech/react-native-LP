@@ -59,6 +59,11 @@ class OtplessReactNativeModule {
     OtplessReactNativeLP.setLogging(status)
   }
 
+  userAuthEvent(authEvent: AuthEvent, fallback: boolean, providerType: ProviderType,
+    providerInfo?: Record<string, string> | null) {
+    OtplessReactNativeLP.userAuthEvent(authEvent, fallback, providerType, providerInfo)
+  }
+
   // Checks if whatsapp is installed on android device
   isWhatsappInstalled(callback: (hasWhatsapp: boolean) => void) {
     if (Platform.OS === 'android') {
@@ -125,5 +130,9 @@ export interface OTPlessError extends ICallbackError {
   status: "error";
 }
 export type OTPlessAuthCallback = OTPlessSuccess | OTPlessError;
+
+export type AuthEvent = "AUTH_INITIATED" | "AUTH_SUCCESS" | "AUTH_FAILED"
+
+export type ProviderType = "CLIENT" | "OTPLESS"
 
 export { OtplessReactNativeModule };

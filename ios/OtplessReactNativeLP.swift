@@ -53,9 +53,24 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
       }
       let requestParams = self.parseRequest(request)
       let timeout = request["waitTime"] as? Int ?? 2000
-      OtplessSwiftLP.shared.start(vc: windowSceneVC!, options: requestParams.options, extras: requestParams.extras, timeout: TimeInterval(timeout / 1000))
+      if let loadingUrl = request["loadingUrl"] as? String {
+        OtplessSwiftLP.shared.start(baseUrl: loadingUrl, vc: windowSceneVC!, options: requestParams.options, extras: requestParams.extras, timeout: TimeInterval(timeout / 1000))
+      } else {
+        OtplessSwiftLP.shared.start(vc: windowSceneVC!, options: requestParams.options, extras: requestParams.extras, timeout: TimeInterval(timeout / 1000))
+      }
+      
     }
   }
+  
+  @objc(setLogging:)
+  func setLogging(status: Bool) {
+    print("enabling logging \(status)")
+  }
+  
+  func userAuthEvent(event: String, fallback: Bool, type: String, providerInfo: [String : String]) {
+    OtplessSwiftLP.shared.userAuthEvent(event: event, providerType: type, fallback: fallback, providerInfo: providerInfo)
+  }
+  
   
   @objc(setResponseCallback)
   func setResponseCallback() {
@@ -101,7 +116,7 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     var dismissButtonStyle: SFSafariViewController.DismissButtonStyle = .close
     var modalPresentationStyle: UIModalPresentationStyle = .automatic
     
-    if let safariVCParams = request["safariCustomizationOptions"] as? [String: Any] {
+    if let safariVCParams = request["customTabParam"] as? [String: Any] {
       if let barColorHex = safariVCParams["preferredBarTintColor"] as? String {
         preferredBarTintColor = UIColor(hex: barColorHex)
       }
