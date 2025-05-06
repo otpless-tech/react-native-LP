@@ -74,6 +74,13 @@ export interface SafariCustomizationOptions  {
   modalPresentationStyle?: 'automatic' | 'pageSheet' | 'formSheet' | 'overFullScreen';
 };
 
+export interface IOTPlessRequest {
+  waitTime?: number;
+  customTabParam?: CustomTabParam | SafariCustomizationOptions;
+  extraQueryParams?: Record<string, string>;
+  loadingUrl?: string;
+}
+
 export interface CustomTabParam {
   toolbarColor?: string;
   secondaryToolbarColor?: string;
@@ -92,5 +99,27 @@ export interface LoginPageParams {
 
   safariCustomizationOption?: SafariCustomizationOptions;
 }
+
+export type IOTPlessAuthCallbackErrorType =  'INITIATE' | 'VERIFY' | 'NETWORK';
+
+export interface ICallbackSuccess {
+  token: string;
+  traceId: string
+}
+
+export interface ICallbackError {
+  errorType: IOTPlessAuthCallbackErrorType;
+  errorCode: number
+  errorMessage: string
+  traceId: string
+}
+
+export interface OTPlessSuccess extends ICallbackSuccess {
+  status: "success";
+}
+export interface OTPlessError extends ICallbackError {
+  status: "error";
+}
+export type OTPlessAuthCallback = OTPlessSuccess | OTPlessError;
 
 export { OtplessReactNativeModule };
