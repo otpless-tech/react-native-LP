@@ -30,8 +30,6 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   init {
     OtplessReactNativeLPManager.registerOtplessModule(this)
     reactContext.addActivityEventListener(this)
-    Utility.isLoggingEnabled = true
-    logd("init called in module")
   }
 
   private fun logd(message: String) {
@@ -107,6 +105,12 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
     logd("on new intent called: ${intent?.data}")
     intent ?: return
     currentActivity?.let { InstanceProvider.getInstance(it).onNewIntent(it, intent) }
+  }
+
+  @ReactMethod
+  fun setLogging(status: Boolean) {
+    logd("setting logging status: $status")
+    Utility.isLoggingEnabled = status
   }
 
 }

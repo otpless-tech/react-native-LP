@@ -17,6 +17,7 @@ export default function HeadlessPage() {
     const initializeModule = () => {
         otplessModule.initialize("H7A18MQGF2DLZY7PIJRQ");
         otplessModule.setResponseCallback(onHeadlessResult);
+        otplessModule.setLogging(true);
     };
 
     const onHeadlessResult = (data: OTPlessAuthCallback) => {

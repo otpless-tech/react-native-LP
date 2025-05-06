@@ -55,6 +55,10 @@ class OtplessReactNativeModule {
     OtplessReactNativeLP.stop();
   }
 
+  setLogging(status: boolean) {
+    OtplessReactNativeLP.setLogging(status)
+  }
+
   // Checks if whatsapp is installed on android device
   isWhatsappInstalled(callback: (hasWhatsapp: boolean) => void) {
     if (Platform.OS === 'android') {
