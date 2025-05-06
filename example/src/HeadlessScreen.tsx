@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
-import { OtplessReactNativeModule } from 'otpless-react-native-lp';
+import { OtplessReactNativeModule, type CustomTabParam, type OTPlessSuccess, type OTPlessError, type IOTPlessRequest, type OTPlessAuthCallback } from 'otpless-react-native-lp';
 
 export default function HeadlessPage() {
     const otplessModule = new OtplessReactNativeModule();
     const [result, setResult] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
+    var lastResponse = ""
 
     useEffect(() => {
         initializeModule();
@@ -15,40 +16,52 @@ export default function HeadlessPage() {
     }, []);
 
     const initializeModule = () => {
-        otplessModule.initialize("YOUR_APP_ID");
+        otplessModule.initialize("YOUR_APP_ID").then((traceId) => {
+            lastResponse = "traceId:  "+ traceId + "\n\n" + lastResponse
+        setResult(lastResponse);
+        });
         otplessModule.setResponseCallback(onHeadlessResult);
+        otplessModule.setLogging(true);
     };
 
-    const onHeadlessResult = (data: any) => {
-        const dataStr = JSON.stringify(data, null, 2);
-        setResult(dataStr);
+    const onHeadlessResult = (data: OTPlessAuthCallback) => {
+        var dataStr = ""
+        if(data.status === "success") {
+            const success: OTPlessSuccess = data 
+            dataStr = "Success\n" +  JSON.stringify(success, null, 2) + "\n";
+        } else {
+            const error: OTPlessError = data
+            dataStr = "Error\n" +  JSON.stringify(error, null, 2) + "\n";
+        }
+        const info = {"status": data.status}
+        otplessModule.userAuthEvent("AUTH_SUCCESS", false, "OTPLESS", info)
+        lastResponse = dataStr + "\n\n" + lastResponse
+        setResult(lastResponse);
     };
 
     const startHeadless = () => {
-        const baseRequest: any = {};
-        if (Platform.OS === 'ios') {
-            baseRequest.safariCustomizationOptions = {
-                preferredBarTintColor: '#5B0171',
-                dismissButtonStyle: 'cancel',
-            };
-        } else {
-            baseRequest.customTabParam = {
+       
+        const baseRequest: IOTPlessRequest = {};
+
+        baseRequest.customTabParam = {
+            ...(Platform.OS === 'ios' ? {
+                    preferredBarTintColor: '#5B0171',
+                    dismissButtonStyle: 'cancel',
+                } : {
                 toolbarColor: '#5B0171',
                 navigationBarColor: '#5B0171',
                 navigationBarDividerColor: '#FF3269',
                 backgroundColor: '#5B0171',
-            };
-        }
-        
-        const request = phoneNumber ? {
-            ...baseRequest,
-            "extraQueryParams": {
+            })
+        };
+
+        if(phoneNumber) {
+           baseRequest.extraQueryParams = {
                 "phone": phoneNumber,
                 "countryCode": "91"
-            }
-        } : baseRequest;
-
-        otplessModule.start(request);
+           } 
+        }
+        otplessModule.start(baseRequest);
     };
 
     const stopOperation = () => {

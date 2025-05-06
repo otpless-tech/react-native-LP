@@ -2,7 +2,9 @@ package com.otplessreactnativelp
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 import com.facebook.react.bridge.ActivityEventListener
+import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -12,24 +14,33 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.otpless.loginpage.main.OtplessController
+import com.otpless.loginpage.model.AuthEvent
 import com.otpless.loginpage.model.CustomTabParam
 import com.otpless.loginpage.model.ErrorType
 import com.otpless.loginpage.model.LoginPageParams
 import com.otpless.loginpage.model.OtplessResult
+import com.otpless.loginpage.model.ProviderType
+import com.otpless.loginpage.util.Utility
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONException
+import java.lang.ref.WeakReference
 
 class OtplessReactNativeLPModule(private val reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext), ActivityEventListener {
 
-  private lateinit var otplessController: OtplessController
-
-
   init {
     OtplessReactNativeLPManager.registerOtplessModule(this)
     reactContext.addActivityEventListener(this)
+  }
+
+  private fun logd(message: String) {
+    Log.d(Tag, message)
+  }
+
+  private fun logd(message: String, error: Throwable) {
+    Log.d(Tag, message, error)
   }
 
   override fun getName(): String {
@@ -38,12 +49,13 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   private fun sendResultCallback(result: OtplessResult) {
     fun sendResultEvent(result: OtplessResult) {
+      logd("sending result: ${result}")
       try {
         val map = result.toWritableMap()
         this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
           .emit("OTPlessEventResult", map)
-      } catch (_: JSONException) {
-
+      } catch (thr: JSONException) {
+        logd("exception in sendResultCallback", thr)
       }
     }
     sendResultEvent(result)
@@ -51,33 +63,40 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   @ReactMethod
   fun stop() {
-    if (this::otplessController.isInitialized) {
-      otplessController.closeOtpless()
-    }
+    logd("stop otpless called")
+    currentActivity?.let { InstanceProvider.getInstance(it).closeOtpless() }
   }
 
   @ReactMethod
-  fun initialize(appId: String) {
-    otplessController = OtplessController.getInstance(currentActivity!!, appId)
-    otplessController.initializeOtpless()
+  fun initialize(appId: String, callback: Callback) {
+    currentActivity?.let {
+      InstanceProvider.getInstance(it).initializeOtpless(appId) { traceId ->
+        callback(traceId)
+      }
+    }
   }
 
   @ReactMethod
   fun start(loginRequest: ReadableMap?) {
-    CoroutineScope(Dispatchers.IO).launch {
-      otplessController.startOtplessWithLoginPage(
-        convertToLoginPageParams(loginRequest)
-      )
+    val request = convertToLoginPageParams(loginRequest)
+    logd("start otpless called\nrequest: $request")
+    currentActivity?.let {
+      CoroutineScope(Dispatchers.IO).launch {
+        InstanceProvider.getInstance(it).startOtplessWithLoginPage(request)
+      }
     }
+
   }
 
   @ReactMethod
   fun setResponseCallback() {
-    otplessController.registerResultCallback(this::sendResultCallback)
+    logd("set response callback called")
+    currentActivity?.let { InstanceProvider.getInstance(it).registerResultCallback(this::sendResultCallback) }
   }
 
   companion object {
     const val NAME = "OtplessReactNativeLP"
+    private const val Tag = "OTPLESS"
   }
 
   override fun onActivityResult(
@@ -86,11 +105,40 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
     resultCode: Int,
     data: Intent?
   ) {
+    logd("on activity result called req: $requestCode res: $resultCode")
   }
 
   override fun onNewIntent(intent: Intent?) {
+    logd("on new intent called: ${intent?.data}")
     intent ?: return
-    otplessController.onNewIntent(currentActivity!!, intent)
+    currentActivity?.let { InstanceProvider.getInstance(it).onNewIntent(it, intent) }
+  }
+
+  @ReactMethod
+  fun setLogging(status: Boolean) {
+    logd("setting logging status: $status")
+    Utility.isLoggingEnabled = status
+  }
+
+  @ReactMethod
+  fun userAuthEvent(event: String, fallback: Boolean, type: String, info: ReadableMap?) {
+    currentActivity?.let {
+      val controller = InstanceProvider.getInstance(it)
+      val authEvent = when(event) {
+        "AUTH_INITIATED" -> AuthEvent.AUTH_INITIATED
+        "AUTH_SUCCESS" -> AuthEvent.AUTH_SUCCESS
+        "AUTH_FAILED" -> AuthEvent.AUTH_FAILED
+        else -> AuthEvent.AUTH_INITIATED
+      }
+      val providerType = when(type) {
+        "OTPLESS" -> ProviderType.OTPLESS
+        "CLIENT" -> ProviderType.CLIENT
+        else -> ProviderType.OTPLESS
+      }
+      val providerInfo: Map<String, String> = info?.toMap() ?: emptyMap()
+      logd("authEvent: $authEvent, fallback: $fallback, providerType: $providerType, providerInfo: ${providerInfo.size}")
+      controller.userAuthEvent(authEvent, fallback, providerType, providerInfo)
+    }
   }
 
 }
@@ -99,11 +147,13 @@ fun OtplessResult.toWritableMap(): WritableMap {
   val map: WritableMap = WritableNativeMap()
   when (this) {
     is OtplessResult.Success -> {
+      map.putString("status", "success")
       map.putString("token", this.token)
       map.putString("traceId", this.traceId)
     }
 
     is OtplessResult.Error -> {
+      map.putString("status", "error")
       map.putString("traceId", this.traceId)
       map.putString("errorMessage", this.errorMessage)
       map.putInt("errorCode", this.errorCode)
@@ -143,7 +193,8 @@ private fun convertToLoginPageParams(request: ReadableMap?): LoginPageParams {
     navigationBarColor = navigationBarColor, navigationBarDividerColor = navigationBarDividerColor, backgroundColor = backgroundColor
   )
   //endregion
-  return LoginPageParams(waitTime = waitTime.toLong(), extraQueryParams = extraParams, customTabParam = customTabParam)
+  return LoginPageParams(waitTime = waitTime.toLong(), extraQueryParams = extraParams,
+    customTabParam = customTabParam, loadingUrl = request.getString("loadingUrl"))
 }
 
 fun ReadableMap.toStringMap(): Map<String, String> {
@@ -166,6 +217,19 @@ fun ReadableMap.toStringMap(): Map<String, String> {
 
 
 
+internal object InstanceProvider {
+  private var otplessController: OtplessController? = null
+  private var activity: WeakReference<Activity?> = WeakReference(null)
+
+  fun getInstance(activity: Activity): OtplessController {
+    if (activity != this.activity.get()) {
+      otplessController?.closeOtpless()
+      otplessController = OtplessController.getInstance(activity)
+      this.activity = WeakReference(activity)
+    }
+    return otplessController!!
+  }
+}
 
 
 

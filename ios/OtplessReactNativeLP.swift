@@ -15,6 +15,7 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
       dict["token"] = response.token
     }
     dict["traceId"] = response.traceId
+    dict["status"] = response.status.lowercased()
     sendEvent(withName: "OTPlessEventResult", body: dict)
   }
   
@@ -24,12 +25,14 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     return ["OTPlessEventResult"]
   }
   
-  @objc(initialize:)
-  func initialize(appId: String) {
+  @objc(initialize:callback:)
+  func initialize(appId: String, callback: @escaping RCTResponseSenderBlock) {
     DispatchQueue.main.async {
       let rootViewController = UIApplication.shared.delegate?.window??.rootViewController
       if rootViewController != nil {
-        OtplessSwiftLP.shared.initialize(appId: appId)
+        OtplessSwiftLP.shared.initialize(appId: appId, onTraceIDReceived: { traceId in
+          callback([traceId])
+        })
         return
       }
       
@@ -37,7 +40,9 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
       if #available(iOS 13.0, *) {
         let windowSceneVC = self.getRootViewControllerFromWindowScene()
         if windowSceneVC != nil {
-          OtplessSwiftLP.shared.initialize(appId: appId)
+          OtplessSwiftLP.shared.initialize(appId: appId, onTraceIDReceived: { traceId in
+            callback([traceId])
+          })
           return
         }
       }
@@ -53,9 +58,25 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
       }
       let requestParams = self.parseRequest(request)
       let timeout = request["waitTime"] as? Int ?? 2000
-      OtplessSwiftLP.shared.start(vc: windowSceneVC!, options: requestParams.options, extras: requestParams.extras, timeout: TimeInterval(timeout / 1000))
+      if let loadingUrl = request["loadingUrl"] as? String {
+        OtplessSwiftLP.shared.start(baseUrl: loadingUrl, vc: windowSceneVC!, options: requestParams.options, extras: requestParams.extras, timeout: TimeInterval(timeout / 1000))
+      } else {
+        OtplessSwiftLP.shared.start(vc: windowSceneVC!, options: requestParams.options, extras: requestParams.extras, timeout: TimeInterval(timeout / 1000))
+      }
+      
     }
   }
+  
+  @objc(setLogging:)
+  func setLogging(status: Bool) {
+    print("enabling logging \(status)")
+  }
+  
+  @objc(userAuthEvent:fallback:type:providerInfo:)
+  func userAuthEvent(event: String, fallback: Bool, type: String, providerInfo: [String : Any]) {
+    OtplessSwiftLP.shared.userAuthEvent(event: event, providerType: type, fallback: fallback, providerInfo: providerInfo.compactMapValues({ $0 as? String }))
+  }
+  
   
   @objc(setResponseCallback)
   func setResponseCallback() {
@@ -101,7 +122,7 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     var dismissButtonStyle: SFSafariViewController.DismissButtonStyle = .close
     var modalPresentationStyle: UIModalPresentationStyle = .automatic
     
-    if let safariVCParams = request["safariCustomizationOptions"] as? [String: Any] {
+    if let safariVCParams = request["customTabParam"] as? [String: Any] {
       if let barColorHex = safariVCParams["preferredBarTintColor"] as? String {
         preferredBarTintColor = UIColor(hex: barColorHex)
       }

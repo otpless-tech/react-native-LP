@@ -33,12 +33,20 @@ class OtplessReactNativeModule {
     this.eventEmitter?.removeAllListeners('OTPlessEventResult');
   }
 
-  initialize(appId: String) {
+  initialize(appId: String): Promise<string> {
     if (this.eventEmitter == null) {
       this.eventEmitter = new NativeEventEmitter(OtplessReactNativeLP);
     }
-    // call the native method
-    OtplessReactNativeLP.initialize(appId);
+    return new Promise((resolve, reject) => {
+      try {
+        OtplessReactNativeLP.initialize(appId, (result: string) => {
+          // if your native always returns success here, just resolve
+          resolve(result);
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
   setResponseCallback(callback: OtplessResultCallback) {
@@ -47,12 +55,21 @@ class OtplessReactNativeModule {
     OtplessReactNativeLP.setResponseCallback()
   }
 
-  start(request: any ) {
-    OtplessReactNativeLP.start(request ?? null);
+  start(request?: IOTPlessRequest) {
+    OtplessReactNativeLP.start(request);
   }
 
   stop() {
     OtplessReactNativeLP.stop();
+  }
+
+  setLogging(status: boolean) {
+    OtplessReactNativeLP.setLogging(status)
+  }
+
+  userAuthEvent(authEvent: AuthEvent, fallback: boolean, providerType: ProviderType,
+    providerInfo?: Record<string, string> | null) {
+    OtplessReactNativeLP.userAuthEvent(authEvent, fallback, providerType, providerInfo)
   }
 
   // Checks if whatsapp is installed on android device
@@ -66,5 +83,64 @@ class OtplessReactNativeModule {
     }
   }
 }
+
+export interface SafariCustomizationOptions  {
+  preferredBarTintColor?: string;
+  preferredControlTintColor?: string;
+  dismissButtonStyle?: 'done' | 'cancel' | 'close';
+  modalPresentationStyle?: 'automatic' | 'pageSheet' | 'formSheet' | 'overFullScreen';
+};
+
+export interface IOTPlessRequest {
+  waitTime?: number;
+  customTabParam?: CustomTabParam | SafariCustomizationOptions;
+  extraQueryParams?: Record<string, string>;
+  loadingUrl?: string;
+}
+
+export interface CustomTabParam {
+  toolbarColor?: string;
+  secondaryToolbarColor?: string;
+  navigationBarColor?: string;
+  navigationBarDividerColor?: string;
+  backgroundColor?: string | null;
+}
+
+export interface LoginPageParams {
+  /** milliseconds to wait (default 2000) */
+  waitTime?: number;
+  /** extra query params (default {}) */
+  extraQueryParams?: Record<string, string>;
+  /** custom tab options (default new CustomTabParam()) */
+  customTabParam?: CustomTabParam;
+
+  safariCustomizationOption?: SafariCustomizationOptions;
+}
+
+export type IOTPlessAuthCallbackErrorType =  'INITIATE' | 'VERIFY' | 'NETWORK';
+
+export interface ICallbackSuccess {
+  token: string;
+  traceId: string
+}
+
+export interface ICallbackError {
+  errorType: IOTPlessAuthCallbackErrorType;
+  errorCode: number
+  errorMessage: string
+  traceId: string
+}
+
+export interface OTPlessSuccess extends ICallbackSuccess {
+  status: "success";
+}
+export interface OTPlessError extends ICallbackError {
+  status: "error";
+}
+export type OTPlessAuthCallback = OTPlessSuccess | OTPlessError;
+
+export type AuthEvent = "AUTH_INITIATED" | "AUTH_SUCCESS" | "AUTH_FAILED"
+
+export type ProviderType = "CLIENT" | "OTPLESS"
 
 export { OtplessReactNativeModule };
