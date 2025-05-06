@@ -32,7 +32,7 @@ export default function HeadlessPage() {
         }
         const info = {"status": data.status}
         otplessModule.userAuthEvent("AUTH_SUCCESS", false, "OTPLESS", info)
-        lastResponse = lastResponse + "\n\n" + dataStr
+        lastResponse = dataStr + "\n\n" + lastResponse
         setResult(lastResponse);
     };
 

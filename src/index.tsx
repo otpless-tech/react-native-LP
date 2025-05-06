@@ -47,8 +47,8 @@ class OtplessReactNativeModule {
     OtplessReactNativeLP.setResponseCallback()
   }
 
-  start(request: any ) {
-    OtplessReactNativeLP.start(request ?? null);
+  start(request?: IOTPlessRequest) {
+    OtplessReactNativeLP.start(request);
   }
 
   stop() {
