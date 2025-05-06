@@ -33,12 +33,20 @@ class OtplessReactNativeModule {
     this.eventEmitter?.removeAllListeners('OTPlessEventResult');
   }
 
-  initialize(appId: String) {
+  initialize(appId: String): Promise<string> {
     if (this.eventEmitter == null) {
       this.eventEmitter = new NativeEventEmitter(OtplessReactNativeLP);
     }
-    // call the native method
-    OtplessReactNativeLP.initialize(appId);
+    return new Promise((resolve, reject) => {
+      try {
+        OtplessReactNativeLP.initialize(appId, (result: string) => {
+          // if your native always returns success here, just resolve
+          resolve(result);
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
   setResponseCallback(callback: OtplessResultCallback) {

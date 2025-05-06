@@ -15,6 +15,7 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
       dict["token"] = response.token
     }
     dict["traceId"] = response.traceId
+    dict["status"] = response.status.lowercased()
     sendEvent(withName: "OTPlessEventResult", body: dict)
   }
   
@@ -24,12 +25,14 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     return ["OTPlessEventResult"]
   }
   
-  @objc(initialize:)
-  func initialize(appId: String) {
+  @objc(initialize:callback:)
+  func initialize(appId: String, callback: @escaping RCTResponseSenderBlock) {
     DispatchQueue.main.async {
       let rootViewController = UIApplication.shared.delegate?.window??.rootViewController
       if rootViewController != nil {
-        OtplessSwiftLP.shared.initialize(appId: appId)
+        OtplessSwiftLP.shared.initialize(appId: appId, onTraceIDReceived: { traceId in
+          callback([traceId])
+        })
         return
       }
       
@@ -37,7 +40,9 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
       if #available(iOS 13.0, *) {
         let windowSceneVC = self.getRootViewControllerFromWindowScene()
         if windowSceneVC != nil {
-          OtplessSwiftLP.shared.initialize(appId: appId)
+          OtplessSwiftLP.shared.initialize(appId: appId, onTraceIDReceived: { traceId in
+            callback([traceId])
+          })
           return
         }
       }
@@ -67,8 +72,9 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     print("enabling logging \(status)")
   }
   
-  func userAuthEvent(event: String, fallback: Bool, type: String, providerInfo: [String : String]) {
-    OtplessSwiftLP.shared.userAuthEvent(event: event, providerType: type, fallback: fallback, providerInfo: providerInfo)
+  @objc(userAuthEvent:fallback:type:providerInfo:)
+  func userAuthEvent(event: String, fallback: Bool, type: String, providerInfo: [String : Any]) {
+    OtplessSwiftLP.shared.userAuthEvent(event: event, providerType: type, fallback: fallback, providerInfo: providerInfo.compactMapValues({ $0 as? String }))
   }
   
   
