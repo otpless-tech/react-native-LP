@@ -16,7 +16,7 @@ export default function HeadlessPage() {
     }, []);
 
     const initializeModule = () => {
-        otplessModule.initialize("H7A18MQGF2DLZY7PIJRQ").then((traceId) => {
+        otplessModule.initialize("YOUR_APP_ID").then((traceId) => {
             lastResponse = "traceId:  "+ traceId + "\n\n" + lastResponse
         setResult(lastResponse);
         });
