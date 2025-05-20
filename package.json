@@ -1,6 +1,6 @@
 {
   "name": "otpless-react-native-lp",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "react native plugin for otpless login page on android and ios",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
