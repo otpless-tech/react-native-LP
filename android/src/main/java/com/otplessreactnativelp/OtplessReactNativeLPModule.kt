@@ -71,7 +71,7 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   @ReactMethod
   fun initialize(appId: String, cctSupportConfig: ReadableMap, callback: Callback) {
     currentActivity?.let { activity ->
-      val config = cctSupportConfigUtil(cctSupportConfig)
+      val config = parseCctConfig(cctSupportConfig)
 
       InstanceProvider.getInstance(activity).initializeOtpless(appId, config) { traceId ->
         callback.invoke(traceId)

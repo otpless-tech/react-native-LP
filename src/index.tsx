@@ -39,10 +39,21 @@ class OtplessReactNativeModule {
     }
     return new Promise((resolve, reject) => {
       try {
-        OtplessReactNativeLP.initialize(appId, cctSupportConfig,(result: string) => {
-          // if your native always returns success here, just resolve
-          resolve(result);
-        });
+        if (Platform.OS === 'android') {
+          OtplessReactNativeLP.initialize(
+            appId,
+            cctSupportConfig,
+            (result: string) => {
+              // if your native always returns success here, just resolve
+              resolve(result);
+            }
+          );
+        } else {
+          OtplessReactNativeLP.initialize(appId, (result: string) => {
+            // if your native always returns success here, just resolve
+            resolve(result);
+          });
+        }
       } catch (err) {
         reject(err);
       }

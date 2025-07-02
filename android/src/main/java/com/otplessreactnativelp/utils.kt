@@ -132,7 +132,7 @@ internal fun ReadableMap.toMap(): Map<String, String> {
 }
 
 
-internal fun cctSupportConfigUtil(map: ReadableMap?): CctSupportConfig {
+internal fun parseCctConfig(map: ReadableMap?): CctSupportConfig {
     if (map == null) return CctSupportConfig()
 
     val typeString = if (map.hasKey("type") && !map.isNull("type"))
