@@ -2,6 +2,7 @@ package com.otplessreactnativelp
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Callback
@@ -68,10 +69,12 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   }
 
   @ReactMethod
-  fun initialize(appId: String, callback: Callback) {
-    currentActivity?.let {
-      InstanceProvider.getInstance(it).initializeOtpless(appId) { traceId ->
-        callback(traceId)
+  fun initialize(appId: String, cctSupportConfig: ReadableMap, callback: Callback) {
+    currentActivity?.let { activity ->
+      val config = cctSupportConfigUtil(cctSupportConfig)
+
+      InstanceProvider.getInstance(activity).initializeOtpless(appId, config) { traceId ->
+        callback.invoke(traceId)
       }
     }
   }

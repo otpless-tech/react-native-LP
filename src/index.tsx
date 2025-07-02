@@ -1,5 +1,5 @@
 import { NativeModules, Platform, NativeEventEmitter } from 'react-native';
-
+import type { CctSupportConfig } from './models';
 
 const LINKING_ERROR =
   `The package 'otpless-react-native-lp' doesn't seem to be linked. Make sure: \n\n` +
@@ -33,13 +33,13 @@ class OtplessReactNativeModule {
     this.eventEmitter?.removeAllListeners('OTPlessEventResult');
   }
 
-  initialize(appId: String): Promise<string> {
+  initialize(appId: String, cctSupportConfig: CctSupportConfig): Promise<string> {
     if (this.eventEmitter == null) {
       this.eventEmitter = new NativeEventEmitter(OtplessReactNativeLP);
     }
     return new Promise((resolve, reject) => {
       try {
-        OtplessReactNativeLP.initialize(appId, (result: string) => {
+        OtplessReactNativeLP.initialize(appId, cctSupportConfig,(result: string) => {
           // if your native always returns success here, just resolve
           resolve(result);
         });
@@ -144,3 +144,5 @@ export type AuthEvent = "AUTH_INITIATED" | "AUTH_SUCCESS" | "AUTH_FAILED"
 export type ProviderType = "CLIENT" | "OTPLESS"
 
 export { OtplessReactNativeModule };
+
+export * from "./models";

@@ -1,5 +1,6 @@
 package com.otplessreactnativelp
 
+import android.net.Uri
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
@@ -7,6 +8,8 @@ import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeArray
 import com.facebook.react.bridge.WritableNativeMap
+import com.otpless.loginpage.model.CctSupportConfig
+import com.otpless.loginpage.model.CctSupportType
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -128,3 +131,27 @@ internal fun ReadableMap.toMap(): Map<String, String> {
   return resultMap
 }
 
+
+internal fun cctSupportConfigUtil(map: ReadableMap?): CctSupportConfig {
+    if (map == null) return CctSupportConfig()
+
+    val typeString = if (map.hasKey("type") && !map.isNull("type"))
+      map.getString("type")
+      else
+       null
+
+    val originString = if (map.hasKey("origin") && !map.isNull("origin"))
+      map.getString("origin")
+    else
+      null
+
+     val type = try {
+       CctSupportType.valueOf(typeString ?: "Twa")
+     } catch (e: IllegalArgumentException) {
+       CctSupportType.Twa
+     }
+
+    val origin = originString?.let { Uri.parse(it) }
+
+    return CctSupportConfig(type = type, origin = origin)
+}
