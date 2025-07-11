@@ -101,7 +101,7 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
     namespace "com.otplessreactnativelp"
     defaultConfig {
-        applicationId "com.digvijayanubhav.app"
+        applicationId "com.digvijay.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -126,13 +126,6 @@ android {
         }
     }
     signingConfigs {
-        debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-        }
-
         release {
           storeFile file(localProperties.getProperty("storePath"))
           storePassword localProperties.getProperty("storePassword")
@@ -141,9 +134,6 @@ android {
         }
     }
     buildTypes {
-        debug {
-            signingConfig signingConfigs.debug
-        }
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
