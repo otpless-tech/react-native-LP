@@ -16,7 +16,6 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.otpless.loginpage.main.OtplessController
 import com.otpless.loginpage.model.AuthEvent
 import com.otpless.loginpage.model.CustomTabParam
-import com.otpless.loginpage.model.ErrorType
 import com.otpless.loginpage.model.LoginPageParams
 import com.otpless.loginpage.model.OtplessResult
 import com.otpless.loginpage.model.ProviderType
@@ -48,25 +47,24 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   }
 
   private fun sendResultCallback(result: OtplessResult) {
-    fun sendResultEvent(result: OtplessResult) {
-      logd("sending result: ${result}")
-      try {
-        val map = result.toWritableMap()
-        this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-          .emit("OTPlessEventResult", map)
-      } catch (thr: JSONException) {
-        logd("exception in sendResultCallback", thr)
-      }
+    logd("sending result: $result")
+    try {
+      val map = result.toWritableMap()
+      this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        .emit("OTPlessEventResult", map)
+    } catch (thr: JSONException) {
+      logd("exception in sendResultCallback", thr)
     }
-    sendResultEvent(result)
   }
 
+  @Suppress("unused")
   @ReactMethod
   fun stop() {
     logd("stop otpless called")
     currentActivity?.let { InstanceProvider.getInstance(it).closeOtpless() }
   }
 
+  @Suppress("unused")
   @ReactMethod
   fun initialize(appId: String, callback: Callback) {
     currentActivity?.let {
@@ -76,6 +74,7 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
     }
   }
 
+  @Suppress("unused")
   @ReactMethod
   fun start(loginRequest: ReadableMap?) {
     val request = convertToLoginPageParams(loginRequest)
@@ -88,15 +87,11 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
 
   }
 
+  @Suppress("unused")
   @ReactMethod
   fun setResponseCallback() {
     logd("set response callback called")
     currentActivity?.let { InstanceProvider.getInstance(it).registerResultCallback(this::sendResultCallback) }
-  }
-
-  companion object {
-    const val NAME = "OtplessReactNativeLP"
-    private const val Tag = "OTPLESS"
   }
 
   override fun onActivityResult(
@@ -114,12 +109,14 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
     currentActivity?.let { InstanceProvider.getInstance(it).onNewIntent(it, intent) }
   }
 
+  @Suppress("unused")
   @ReactMethod
   fun setLogging(status: Boolean) {
     logd("setting logging status: $status")
     Utility.isLoggingEnabled = status
   }
 
+  @Suppress("unused")
   @ReactMethod
   fun userAuthEvent(event: String, fallback: Boolean, type: String, info: ReadableMap?) {
     currentActivity?.let {
@@ -141,9 +138,34 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
     }
   }
 
+  companion object {
+    const val NAME = "OtplessReactNativeLP"
+    private const val Tag = "OTPLESS"
+  }
 }
 
-fun OtplessResult.toWritableMap(): WritableMap {
+// region conversion helping method
+
+/**
+ * Converts an [OtplessResult] into a React Native [WritableMap] representation.
+ *
+ * The resulting map includes:
+ * - For [OtplessResult.Success]:
+ *   - `"status"` = `"success"`
+
+ * - For [OtplessResult.Error]:
+ *   - `"status"` = `"error"`
+ *
+ * Extra status field added before converting [OtplessResult.Success], [OtplessResult.Error] in
+ * JSON, so that they can be parsed easily
+ *
+ * This map can be passed across the React Native bridge for consumption
+ * on the JavaScript side.
+ *
+ * @receiver The [OtplessResult] instance to be converted.
+ * @return A [WritableMap] containing the serialized result.
+ */
+internal fun OtplessResult.toWritableMap(): WritableMap {
   val map: WritableMap = WritableNativeMap()
   when (this) {
     is OtplessResult.Success -> {
@@ -157,20 +179,24 @@ fun OtplessResult.toWritableMap(): WritableMap {
       map.putString("traceId", this.traceId)
       map.putString("errorMessage", this.errorMessage)
       map.putInt("errorCode", this.errorCode)
-      map.putString("errorType", this.errorType.toStr())
+      map.putString("errorType", this.errorType.name)
     }
   }
   return map
 }
 
-private fun ErrorType.toStr(): String {
-  return when (this) {
-    ErrorType.VERIFY -> "VERIFY"
-    ErrorType.NETWORK -> "NETWORK"
-    ErrorType.INITIATE -> "INITIATE"
-  }
-}
-
+/**
+ * Converts a [ReadableMap] request into a [LoginPageParams] object
+ * that can be consumed by the Otpless SDK.
+ *
+ * If the map is `null`, default values are used:
+ * - `waitTime` defaults to 2000 ms
+ * - `extraQueryParams` defaults to an empty map
+ * - `customTabParam` fields default to empty strings (or `null` where applicable)
+ *
+ * @param request The input request as a [ReadableMap] (may be `null`).
+ * @return A [LoginPageParams] instance with values parsed from the request.
+ */
 private fun convertToLoginPageParams(request: ReadableMap?): LoginPageParams {
   request ?: return LoginPageParams()
   var waitTime = 2_000
@@ -193,9 +219,20 @@ private fun convertToLoginPageParams(request: ReadableMap?): LoginPageParams {
     navigationBarColor = navigationBarColor, navigationBarDividerColor = navigationBarDividerColor, backgroundColor = backgroundColor
   )
   //endregion
-  return LoginPageParams(waitTime = waitTime.toLong(), extraQueryParams = extraParams,
-    customTabParam = customTabParam, loadingUrl = request.getString("loadingUrl"))
+  return LoginPageParams(
+    waitTime = waitTime.toLong(), extraQueryParams = extraParams,
+    customTabParam = customTabParam, loadingUrl = request.getString("loadingUrl")
+  )
 }
+
+/**
+ * Converts a React Native [ReadableMap] into a [Map] of `String` keys and values.
+ *
+ * All entries are coerced into string representations, preserving the original keys.
+ *
+ * @receiver The [ReadableMap] instance to convert.
+ * @return A [Map] with all keys preserved and values as strings.
+ */
 
 fun ReadableMap.toStringMap(): Map<String, String> {
   val result = mutableMapOf<String, String>()
@@ -215,8 +252,28 @@ fun ReadableMap.toStringMap(): Map<String, String> {
   return result
 }
 
+//endregion
 
 
+/**
+ * Provides a singleton-like instance of [OtplessController] tied to the current [Activity].
+ *
+ * If a different [Activity] is passed than the one previously held,
+ * the existing controller is closed and a new instance is created.
+ *
+ * The [Activity] reference is stored as a [WeakReference] to avoid memory leaks.
+ *
+ * Usage:
+ * ```
+ * val controller = InstanceProvider.getInstance(activity)
+ * ```
+ *
+ * ### Note
+ * Usually different activity is not passed, even in case of low memory, RN-Module is also
+ * kill along with activity, but at the time of debugging, when refreshed through metro RN-Module is
+ * not created and new activity is created, to avoid this, [InstanceProvider] is used. In **Release**
+ * build as no metro bundler is used so always same activity instance will send
+ */
 internal object InstanceProvider {
   private var otplessController: OtplessController? = null
   private var activity: WeakReference<Activity?> = WeakReference(null)
