@@ -23,7 +23,13 @@ export default function HeadlessPage() {
         otplessModule.setWebViewInspectable();
         otplessModule.setResponseCallback(onHeadlessResult);
         otplessModule.setLogging(true);
+        otplessModule.addEventObserver(onLoginPageEvent);
     };
+
+    const onLoginPageEvent = (data: any) => {
+        lastResponse = `==== event ====\n${JSON.stringify(data)}\n======   ======"\n\n"${lastResponse}`;
+        setResult(lastResponse);
+    }
 
     const onHeadlessResult = (data: OTPlessAuthCallback) => {
         var dataStr = ""
@@ -62,6 +68,7 @@ export default function HeadlessPage() {
                 "countryCode": "91"
            } 
         }
+        baseRequest.loadingUrl = "https://inpix.otpless.com/v5/auth/index.html"
         otplessModule.start(baseRequest);
     };
 

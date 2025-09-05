@@ -14,6 +14,7 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.otpless.loginpage.main.OtplessController
+import com.otpless.loginpage.main.OtplessEventData
 import com.otpless.loginpage.model.AuthEvent
 import com.otpless.loginpage.model.CustomTabParam
 import com.otpless.loginpage.model.LoginPageParams
@@ -84,7 +85,6 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
         InstanceProvider.getInstance(it).startOtplessWithLoginPage(request)
       }
     }
-
   }
 
   @Suppress("unused")
@@ -92,6 +92,26 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   fun setResponseCallback() {
     logd("set response callback called")
     currentActivity?.let { InstanceProvider.getInstance(it).registerResultCallback(this::sendResultCallback) }
+  }
+
+  @Suppress("unused")
+  @ReactMethod
+  fun addEventObserver() {
+    logd("setting event observer")
+    currentActivity?.let {
+      InstanceProvider.getInstance(it).addEventObserver(this::onOtplessEventReceived)
+    }
+  }
+
+  private fun onOtplessEventReceived(data: OtplessEventData) {
+    logd("sending event: $data")
+    try {
+      val map = data.toWritableMap()
+      this.reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        .emit("OtplessEventObserver", map)
+    } catch (thr: JSONException) {
+      logd("exception in onOtplessEventReceived", thr)
+    }
   }
 
   override fun onActivityResult(

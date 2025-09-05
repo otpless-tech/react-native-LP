@@ -22,7 +22,7 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
   private var currentTask: Task<Void, Never>?
   
   override func supportedEvents() -> [String]! {
-    return ["OTPlessEventResult"]
+    return ["OTPlessEventResult", "OtplessEventObserver"]
   }
   
   @objc(initialize:callback:)
@@ -85,6 +85,11 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     OtplessSwiftLP.shared.setResponseDelegate(self)
   }
   
+  @objc(addEventObserver)
+  func addEventObserver() {
+    OtplessSwiftLP.shared.setEventDelegate(self)
+  }
+  
   @objc(stop)
   func stop() {
     OtplessSwiftLP.shared.cease()
@@ -122,5 +127,19 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
       return nil
     }
     return windowScene
+  }
+}
+
+
+// implementation of external method for observing event
+extension OtplessReactNativeLP: OnEventDelegate {
+  
+  func onEvent(_ event: OtplessEventData) {
+    let map: [String: Any] = [
+      "category": event.category.name,
+      "eventType": event.eventType.name,
+      "metaData": event.metaData
+    ]
+    sendEvent(withName: "OtplessEventObserver", body: map)
   }
 }
