@@ -7,6 +7,7 @@ import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeArray
 import com.facebook.react.bridge.WritableNativeMap
+import com.otpless.loginpage.main.OtplessEventData
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -126,5 +127,13 @@ internal fun ReadableMap.toMap(): Map<String, String> {
     }
   }
   return resultMap
+}
+
+internal fun OtplessEventData.toWritableMap(): WritableMap {
+  val map: WritableMap = WritableNativeMap()
+  map.putString("category", category.name)
+  map.putString("eventType", eventType.name)
+  map.putMap("metaData", convertJsonToMap(jsonObject = metaData))
+  return map
 }
 

@@ -20,9 +20,16 @@ export default function HeadlessPage() {
             lastResponse = "traceId:  "+ traceId + "\n\n" + lastResponse
         setResult(lastResponse);
         });
+        otplessModule.setWebViewInspectable();
         otplessModule.setResponseCallback(onHeadlessResult);
         otplessModule.setLogging(true);
+        otplessModule.addEventObserver(onLoginPageEvent);
     };
+
+    const onLoginPageEvent = (data: any) => {
+        lastResponse = `==== event ====\n${JSON.stringify(data)}\n======   ======"\n\n"${lastResponse}`;
+        setResult(lastResponse);
+    }
 
     const onHeadlessResult = (data: OTPlessAuthCallback) => {
         var dataStr = ""

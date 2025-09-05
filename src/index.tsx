@@ -49,10 +49,16 @@ class OtplessReactNativeModule {
     });
   }
 
+  addEventObserver(callback: OtplessResultCallback) {
+    this.eventEmitter?.removeAllListeners('OtplessEventObserver');
+    this.eventEmitter?.addListener('OtplessEventObserver', callback);
+    OtplessReactNativeLP.addEventObserver();
+  }
+
   setResponseCallback(callback: OtplessResultCallback) {
     this.eventEmitter?.addListener('OTPlessEventResult', callback);
     // call the native method
-    OtplessReactNativeLP.setResponseCallback()
+    OtplessReactNativeLP.setResponseCallback();
   }
 
   start(request?: IOTPlessRequest) {
@@ -60,16 +66,17 @@ class OtplessReactNativeModule {
   }
 
   stop() {
+    this.eventEmitter?.removeAllListeners('OtplessEventObserver');
     OtplessReactNativeLP.stop();
   }
 
   setLogging(status: boolean) {
-    OtplessReactNativeLP.setLogging(status)
+    OtplessReactNativeLP.setLogging(status);
   }
 
   userAuthEvent(authEvent: AuthEvent, fallback: boolean, providerType: ProviderType,
     providerInfo?: Record<string, string> | null) {
-    OtplessReactNativeLP.userAuthEvent(authEvent, fallback, providerType, providerInfo)
+    OtplessReactNativeLP.userAuthEvent(authEvent, fallback, providerType, providerInfo);
   }
 
   // Checks if whatsapp is installed on android device
@@ -80,6 +87,13 @@ class OtplessReactNativeModule {
         callback(hasWhatsapp);
       });
       return
+    }
+  }
+
+  setWebViewInspectable() {
+    // in android case deubg build is always inspectable
+    if (Platform.OS === "ios") {
+      OtplessReactNativeLP.setWebViewInspectable();
     }
   }
 }
