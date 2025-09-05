@@ -68,7 +68,6 @@ export default function HeadlessPage() {
                 "countryCode": "91"
            } 
         }
-        baseRequest.loadingUrl = "https://inpix.otpless.com/v5/auth/index.html"
         otplessModule.start(baseRequest);
     };
 
