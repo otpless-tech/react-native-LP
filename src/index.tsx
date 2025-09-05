@@ -82,6 +82,13 @@ class OtplessReactNativeModule {
       return
     }
   }
+
+  setWebViewInspectable() {
+    // in android case deubg build is always inspectable
+    if (Platform.OS === "ios") {
+      OtplessReactNativeLP.setWebViewInspectable();
+    }
+  }
 }
 
 export interface SafariCustomizationOptions  {

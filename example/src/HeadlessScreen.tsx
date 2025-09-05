@@ -20,6 +20,7 @@ export default function HeadlessPage() {
             lastResponse = "traceId:  "+ traceId + "\n\n" + lastResponse
         setResult(lastResponse);
         });
+        otplessModule.setWebViewInspectable();
         otplessModule.setResponseCallback(onHeadlessResult);
         otplessModule.setLogging(true);
     };
