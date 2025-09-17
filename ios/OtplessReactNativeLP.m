@@ -19,5 +19,11 @@ RCT_EXTERN_METHOD(setLogging:(BOOL) status)
 
 RCT_EXTERN_METHOD(userAuthEvent:(NSString *)event fallback:(BOOL)fallback type:(NSString *)type providerInfo:(NSDictionary *)providerInfo)
 
+RCT_EXTERN_METHOD(initializeSessionManager:(NSString *) appId)
+
+RCT_EXTERN_METHOD(logout)
+
+RCT_EXTERN_METHOD(getActiveSession:(RCTPromiseResolveBlock*)resolve reject:(RCTPromiseRejectBlock*)reject)
+
 @end
 

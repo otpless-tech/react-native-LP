@@ -6,7 +6,8 @@ export default function HeadlessPage() {
     const otplessModule = new OtplessReactNativeModule();
     const [result, setResult] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
-    var lastResponse = ""
+
+    const APP_ID = ""
 
     useEffect(() => {
         initializeModule();
@@ -16,19 +17,18 @@ export default function HeadlessPage() {
     }, []);
 
     const initializeModule = () => {
-        otplessModule.initialize("YOUR_APP_ID").then((traceId) => {
-            lastResponse = "traceId:  "+ traceId + "\n\n" + lastResponse
-        setResult(lastResponse);
+        otplessModule.initialize(APP_ID).then((traceId) => {
+        setResult(`traceId: ${traceId}`);
         });
         otplessModule.setWebViewInspectable();
         otplessModule.setResponseCallback(onHeadlessResult);
         otplessModule.setLogging(true);
         otplessModule.addEventObserver(onLoginPageEvent);
+        otplessModule.initializeSession(APP_ID)
     };
 
     const onLoginPageEvent = (data: any) => {
-        lastResponse = `==== event ====\n${JSON.stringify(data)}\n======   ======"\n\n"${lastResponse}`;
-        setResult(lastResponse);
+        setResult(prev => `==== event ====\n${JSON.stringify(data)}\n======   ======"\n\n"${prev}`);
     }
 
     const onHeadlessResult = (data: OTPlessAuthCallback) => {
@@ -42,8 +42,7 @@ export default function HeadlessPage() {
         }
         const info = {"status": data.status}
         otplessModule.userAuthEvent("AUTH_SUCCESS", false, "OTPLESS", info)
-        lastResponse = dataStr + "\n\n" + lastResponse
-        setResult(lastResponse);
+        setResult(prev => `${dataStr}\n\n${prev}`);
     };
 
     const startHeadless = () => {
@@ -75,6 +74,18 @@ export default function HeadlessPage() {
         otplessModule.stop()
     };
 
+    const getActiveSession = async () => {
+        let session = await otplessModule.getActiveSession();
+        let str = JSON.stringify(session);
+        setResult(prev => `${str}\n\n+${prev}`);
+        console.log(str);
+    }
+
+    const logout = () => {
+        otplessModule.logout();
+        setResult(prev => "session logout\n\n" + prev);
+    }
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
 
@@ -93,6 +104,15 @@ export default function HeadlessPage() {
             <TouchableOpacity style={styles.secondaryButton} onPress={stopOperation}>
                 <Text style={styles.buttonText}>stop Operation</Text>
             </TouchableOpacity>
+            <View style = {styles.row}>
+                <TouchableOpacity style={styles.flexButtonPrimary} onPress={getActiveSession}>
+                    <Text style={styles.buttonText}>Active Session</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.flexButtonSecondary} onPress={logout}>
+                    <Text style={styles.buttonText}>Logout</Text>
+                </TouchableOpacity>
+            </View>
 
             {result ? (
                 <View style={styles.resultContainer}>
@@ -137,6 +157,22 @@ const styles = StyleSheet.create({
         width: '80%',
         alignItems: 'center',
     },
+    flexButtonPrimary: {
+        flex: 1,                   // each button gets equal weight
+        marginHorizontal: 5,       // spacing between buttons
+        backgroundColor: "#007AFF",
+        paddingVertical: 12,
+        borderRadius: 30,
+        alignItems: "center",
+    },
+    flexButtonSecondary: {
+        flex: 1,                   // each button gets equal weight
+        marginHorizontal: 5,       // spacing between buttons
+        backgroundColor: "#FF3B30",
+        paddingVertical: 12,
+        borderRadius: 30,
+        alignItems: "center",
+    },
     buttonText: {
         color: '#fff',
         fontSize: 16,
@@ -159,5 +195,10 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#444',
         fontFamily: 'Courier',
+    },
+    row: {
+        flexDirection: "row",
+        justifyContent: "space-between", // or "space-around" if you prefer
+        marginVertical: 10,
     },
 });

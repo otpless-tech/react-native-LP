@@ -49,6 +49,11 @@ class OtplessReactNativeModule {
     });
   }
 
+  initializeSession(appId: String) {
+    OtplessReactNativeLP.initializeSessionManager(appId)
+  }
+
+
   addEventObserver(callback: OtplessResultCallback) {
     this.eventEmitter?.removeAllListeners('OtplessEventObserver');
     this.eventEmitter?.addListener('OtplessEventObserver', callback);
@@ -96,6 +101,14 @@ class OtplessReactNativeModule {
       OtplessReactNativeLP.setWebViewInspectable();
     }
   }
+
+  async getActiveSession(): Promise<OtplessSessionResponse> {
+    return await OtplessReactNativeLP.getActiveSession()
+  }
+
+  logout() {
+    OtplessReactNativeLP.logout()
+  }
 }
 
 export interface SafariCustomizationOptions  {
@@ -135,14 +148,14 @@ export type IOTPlessAuthCallbackErrorType =  'INITIATE' | 'VERIFY' | 'NETWORK';
 
 export interface ICallbackSuccess {
   token: string;
-  traceId: string
+  traceId: string;
 }
 
 export interface ICallbackError {
   errorType: IOTPlessAuthCallbackErrorType;
-  errorCode: number
-  errorMessage: string
-  traceId: string
+  errorCode: number;
+  errorMessage: string;
+  traceId: string;
 }
 
 export interface OTPlessSuccess extends ICallbackSuccess {
@@ -158,3 +171,8 @@ export type AuthEvent = "AUTH_INITIATED" | "AUTH_SUCCESS" | "AUTH_FAILED"
 export type ProviderType = "CLIENT" | "OTPLESS"
 
 export { OtplessReactNativeModule };
+
+export interface OtplessSessionResponse {
+  state: 'active' | 'inactive';
+  sessionToken: string | null;
+}
