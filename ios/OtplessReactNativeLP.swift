@@ -128,6 +128,25 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
     }
     return windowScene
   }
+  
+  @objc(initializeSessionManager:)
+  func initializeSessionManager(appId: String) {
+    
+  }
+  
+  @objc(getActiveSession:reject:)
+  func getActiveSession(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    let response = ["status": "inactive"]
+    resolve(response)
+  }
+  
+  @objc(logout)
+  func logout() {
+    
+  }
+  
+  
+  
 }
 
 

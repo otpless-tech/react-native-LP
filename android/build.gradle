@@ -75,7 +75,7 @@ dependencies {
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation ("io.github.otpless-tech:otpless-loginpage-android:1.1.6")
+  implementation ("io.github.otpless-tech:otpless-loginpage-android:1.1.7")
 }
 
 if (isNewArchitectureEnabled()) {

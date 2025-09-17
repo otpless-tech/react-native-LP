@@ -3,8 +3,11 @@ package com.otplessreactnativelp
 import android.app.Activity
 import android.content.Intent
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.facebook.react.bridge.ActivityEventListener
 import com.facebook.react.bridge.Callback
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -19,7 +22,9 @@ import com.otpless.loginpage.model.AuthEvent
 import com.otpless.loginpage.model.CustomTabParam
 import com.otpless.loginpage.model.LoginPageParams
 import com.otpless.loginpage.model.OtplessResult
+import com.otpless.loginpage.model.OtplessSessionState
 import com.otpless.loginpage.model.ProviderType
+import com.otpless.loginpage.session.OtplessSessionManager
 import com.otpless.loginpage.util.Utility
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +36,7 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
   ReactContextBaseJavaModule(reactContext), ActivityEventListener {
 
   init {
-    OtplessReactNativeLPManager.registerOtplessModule(this)
+
     reactContext.addActivityEventListener(this)
   }
 
@@ -155,6 +160,52 @@ class OtplessReactNativeLPModule(private val reactContext: ReactApplicationConte
       val providerInfo: Map<String, String> = info?.toMap() ?: emptyMap()
       logd("authEvent: $authEvent, fallback: $fallback, providerType: $providerType, providerInfo: ${providerInfo.size}")
       controller.userAuthEvent(authEvent, fallback, providerType, providerInfo)
+    }
+  }
+
+  @Suppress("unused")
+  @ReactMethod
+  fun initializeSessionManager(appId: String) {
+    val componentActivity = currentActivity as? AppCompatActivity ?: return
+    componentActivity.lifecycleScope.launch {
+      logd("OtplessSessionManager Initialized")
+      OtplessSessionManager.init(componentActivity.applicationContext, appId)
+    }
+  }
+
+  @Suppress("unused")
+  @ReactMethod
+  fun logout() {
+    val componentActivity = currentActivity as? AppCompatActivity ?: return
+    componentActivity.lifecycleScope.launch {
+      logd("OtplessSessionManager Logout")
+      OtplessSessionManager.logout()
+    }
+  }
+
+  @Suppress("unused")
+  @ReactMethod
+  fun getActiveSession(promise: Promise) {
+    val componentActivity = currentActivity as? AppCompatActivity ?: return
+    componentActivity.lifecycleScope.launch {
+      logd("OtplessSessionManager active session requested")
+      val session = OtplessSessionManager.getActiveSession()
+
+      val convertedResponse = when(session) {
+        is OtplessSessionState.Inactive -> {
+          WritableNativeMap().also {
+            it.putString("state", "inactive")
+          }
+        }
+        is OtplessSessionState.Active -> {
+          WritableNativeMap().also {
+            it.putString("state", "active")
+            it.putString("sessionToken", session.jwtToken)
+          }
+        }
+      }
+      // sending info of active session
+      promise.resolve(convertedResponse)
     }
   }
 
