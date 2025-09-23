@@ -135,18 +135,27 @@ class OtplessReactNativeLP: RCTEventEmitter, ConnectResponseDelegate {
   }
   
   @objc(getActiveSession:reject:)
-  func getActiveSession(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
-    let response = ["status": "inactive"]
-    resolve(response)
+  func getActiveSession(resolve: @escaping RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    Task {
+      let response = await OtplessSessionManager.shared.getActiveSession()
+      var responseDictionary: [String: String] = [:]
+      switch response {
+      case .active(let sessionToken):
+        responseDictionary["state"] =  "active"
+        responseDictionary["sessionToken"] = sessionToken
+      case .inactive:
+        responseDictionary["state"] =  "inactive"
+      }
+      resolve(responseDictionary)
+    }
   }
   
   @objc(logout)
   func logout() {
-    
+    Task {
+      await OtplessSessionManager.shared.logout()
+    }
   }
-  
-  
-  
 }
 
 
